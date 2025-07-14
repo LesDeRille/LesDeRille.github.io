@@ -1,10 +1,88 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-US">
   <head>
-    <title>Startseite LesdeRille</title>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8">
+
+    <title>Taschenrechner</title>
+
+    <style>
+      html {
+        font-family: sans-serif;
+      }
+
+      body {
+        width: 50%;
+        max-width: 800px;
+        min-width: 480px;
+        margin: 0 auto;
+      }
+      
+      .form input[type="number"] {
+        width: 200px;
+      }
+
+      .lastResult {
+        color: white;
+        padding: 3px;
+      }
+    </style>
   </head>
+
   <body>
-    <p>Startseite LesdeRille</p>
+    <h1>Taschenrechner</h1>
+    <input type="number" id="ersteZahl" class="ersteZahl">
+        
+    <datalist id="operator">
+      <option value="+"></option>
+      <option value="-"></option>
+      <option value="*"></option>
+      <option value="/"></option>
+    </datalist>
+    
+    <input list = "operator" id = "operatorAuswahl" name = "operatorAuswahl" class="operator" size="5"</input>
+        
+    <input type="number" id="zweiteZahl" class="zweiteZahl">
+        
+    <input type="submit" value="=" class="berechnen">
+        
+    <p class="ergebnis"></p>
+
+    <script>
+        const berechnen = document.querySelector(".berechnen");
+        const zahl1 = document.querySelector(".ersteZahl");
+        const zahl2 = document.querySelector(".zweiteZahl");
+        const operat = document.querySelector(".operator");
+        const ergebnis = document.querySelector(".ergebnis");
+        
+        function rechnen() {
+            
+            const z1 = Number(zahl1.value);
+            const z2 = Number(zahl2.value);
+            const opi = operat.value;
+            // default: falls nix geht wird 666 angezeigt
+            let erg = 666
+            
+            //console.log(opi)
+            switch (opi) {
+                case "+":
+                    erg = z1 + z2;
+                    break;
+                case "-":
+                    erg = z1 - z2;
+                    break;
+                case "*":
+                    erg = z1 * z2;
+                    break;
+                case "/":
+                    erg = z1 / z2;
+                    break;
+            }
+            // so kann man einfach runden
+            ergebnis.textContent = `${erg} ${erg.toFixed(2)}`
+            }
+        
+        berechnen.addEventListener("click", rechnen);
+        
+    </script>
   </body>
 </html>
