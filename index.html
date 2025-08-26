@@ -1,31 +1,360 @@
 <!DOCTYPE html>
-<html lang="en-US">
-  <head>
-    <meta charset="utf-8">
+<html>
 
-    <title>Hauptmenu</title>
+<head>
+    <title>Tagesschau</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+</head>
 
-    <style>
-      
-    </style>
-  </head>
+<style>
+    button {
+        border-radius: 10px;
+        border: 1px solid #000;
+        color: black;
+        background-color: white;
+        font-size: small;
+        margin-left: 2px;
+    }
 
-  <body>
-    <h1>Hauptmenü GitHub</h1>
-    <ul>
-      <li>ein Link</li>
-      <!-- <li><a href="./ziel_01.html">Link zu einer lokalen Zielseite</a></li>
-      <li><a target="_blank" href="./ZIEL02/ziel_02_mit_Unterprogramm.html">Hier könnte der dxf-Viewer stehen</a></li> -->
-      <li><a target="_blank" href="./LocalStorage/zugriffAufLocalstorage.html">Zugriff auf local Storage</a></li> 
-      <li><a target="_blank" href="./LocalStorage/localStorageLesen.html">Lesen von local Storage</a></li>
-    </ul>
+    .resobutt {
+        border-radius: 10px;
+        border: 1px solid #000;
+        color: black;
+        background-color: white;
+        font-size: small;
+    }
+
+    .meldungsTag {
+        border-radius: 10px;
+        border: 1px solid #000;
+        color: black;
+        background-color: lightblue;
+        font-size: small;
+    }
+
+    .blackTag {
+        border-radius: 10px;
+        border: 1px solid #000;
+        color: black;
+        background-color: yellow;
+        font-size: small;
+    }
+
+    mark {
+        background: white;
+        font-weight: bold;
+        font-size: 150%;
+        border-radius: 3px;
+        padding: 3px;
+    }
+
+    a {
+        color: #0060B6;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 120%;
+    }
+
+    .ueberschriften {
+        background-color: rgb(68, 111, 177);
+        color: rgb(255, 255, 255);
+        padding: 3px;
+    }
+
+    .ausgeblendeteTags {
+        background-color: rgb(233, 130, 19);
+        color: rgb(255, 255, 255);
+        padding: 3px;
+        /* font-size: small; */
+    }
+</style>
+
+<body>
+    <div class="ueberschriften">
+
+        <h1>Tagesschau</h1>
+        <!-- leere Überschrift, wird in der Programmsteuerung befüllt -->
+
+        <!-- <p>Angezeigtes Ressort: <mark class="angezeigtesRessort"></mark></p> -->
+        <p class="waehlbareRessorts">Wählbare Ressorts: </p>
+        <div id="ressorts">
+
+        </div>
+        <p class="ausgeblendeteTags">Blockierte Schlagworte: </p>
+    </div>
+
+    <hr>
+    <hr>
+
+    <dl id="Schlagzeilen">
+    </dl>
+
+    <dialog id="tagDialog">
+        <p>Schlagwort <em id="derTag"></em> auf Blacklist setzen?</p>
+        <p><input type="submit" value="OK" id="tagAufBlacklist"></p>
+    </dialog>
+    <dialog id="blacklistTagDialog">
+        <p>Schlagwort <em id="derBlacklistTag"></em> aus Blacklist rausnehmen?</p>
+        <p><input type="submit" value="OK" id="tagRausAusBlacklist"></p>
+    </dialog>
+
     <script>
-      console.log(window.navigator)
-      console.log(window.navigator.platform)
-      
-      // nicht vergessen: geht nicht im privaten Modus
-      console.log(window.localStorage)
-      alert(window.origin)
+        "use strict";
+
+        async function urlLesen(ressort = "Sport") {
+            let url = 'https://www.tagesschau.de/api2u/news/?ressort=' + ressort;
+            let response = await fetch(url);
+            let commits = await response.json(); // read response body and parse as JSON
+
+            meldungenVerarbeiten(commits.news)
+        }
+
+
+        function meldungenVerarbeiten(inhalt) {
+            // 'news' aus json nach Datum absteigend sortieren
+            inhalt.sort((a, b) => new Date(b.date) - new Date(a.date))
+
+            for (let meldung of inhalt) {
+                neueSchlagzeileErzeugen(meldung);
+            }
+        }
+
+        // function machAusgeblendeteTagsString(reso) {
+        //     ausgeblendeteTagsString = reso + " (Ausgeblendete Tags: ";
+        // }
+
+        function blacklistAusgabeortReset() {
+            while (blacklistAusgabeort[0].firstChild) {
+                blacklistAusgabeort[0].removeChild(blacklistAusgabeort[0].firstChild)
+            }
+            blacklistAusgabeort[0].textContent = "Blockierte Schlagworte: "
+        }
+
+        // Hier kommt die Verarbeitung des Klicks auf den 'OK' Button im 'tagDialog'
+        // Mit 'OK' wird der Tag auf die Blacklist geschrieben
+        tagAufBlacklist.addEventListener("click", () => {
+            blacklist.push(gewaehlterTag.textContent);
+            inLocalStorageAblegen("Blacklist", blacklist);
+            tagDialog.close();
+            bisherigeSchlagzeilenLoeschen();
+            blacklistAusgabeortReset()
+            machButtonAusTag(blacklist, blacklistAusgabeort[0], blacklistTagDialog, gewaehlterBlacklistTag, "blackTag");
+            urlLesen(gewaehltesRessort);
+        });
+
+        // Hier kommt die Verarbeitung des Klicks auf den 'OK' Button im 'blacklistTagDialog'
+        // Mit 'OK' wird der Tag aus der Blacklist herausgenommen
+        tagRausAusBlacklist.addEventListener("click", () => {
+            const index = blacklist.indexOf(gewaehlterBlacklistTag.textContent);
+            blacklist.splice(index, 1); // 2nd parameter means remove one item only
+            inLocalStorageAblegen("Blacklist", blacklist);
+            blacklistTagDialog.close();
+            bisherigeSchlagzeilenLoeschen();
+            blacklistAusgabeortReset()
+            machButtonAusTag(blacklist, blacklistAusgabeort[0], blacklistTagDialog, gewaehlterBlacklistTag, "blackTag");
+            urlLesen(gewaehltesRessort);
+        });
+
+        let gewaehlterTag = document.getElementById("derTag");
+        let gewaehlterBlacklistTag = document.getElementById("derBlacklistTag");
+
+
+        function neueSchlagzeileErzeugen(meldung) {
+            let inBlacklist = false;
+
+            function meldungNichtAufBlacklist() {
+
+                // html Elemente erzeugen
+                let schlagzeilen = document.getElementById("Schlagzeilen");
+                let neuerTitel = document.createElement("dt");
+                let neueErsteZeile = document.createElement("dd");
+                let neuerAnker = document.createElement("a");
+                let leerzeile = document.createElement("hr");
+                let datum = document.createElement("span");
+
+                // Bausteine der Schlagzeile zusammenklauben
+                neueErsteZeile.textContent = meldung.firstSentence;
+                neuerAnker.href = meldung.detailsweb;
+                datum.textContent = "   " + (new Date(meldung.date)).toLocaleString();
+                neuerAnker.textContent = meldung.title;
+
+                // Bausteine der Schlagzeile an neues Listenelement anhängen
+                neuerTitel.appendChild(neuerAnker);
+                neuerTitel.appendChild(datum);
+                machButtonAusTag(alleTagsDerMeldung, neuerTitel, tagDialog, gewaehlterTag, "meldungsTag");
+
+                // Bausteine der Schlagzeile an document anhängen
+                schlagzeilen.appendChild(neuerTitel);
+                schlagzeilen.appendChild(neueErsteZeile);
+                schlagzeilen.appendChild(leerzeile);
+
+                istDieMeldungNeu();
+
+                // Prüfen, ob die Meldung schon mal eingeblendet wurde
+                function istDieMeldungNeu() {
+                    // Letzte Titelzeile herausfinden
+                    let titelzeilen = document.getElementsByTagName("dt");
+                    let letzteTitelzeilenNummer = titelzeilen.length - 1;
+
+                    // Aktuelles Meldungsdatum mit Datum des vorigen Aufrufs der Meldung vergleichen
+                    let grenze = new Date(letzterAufrufDesRessorts);
+                    let meldeDate = new Date(meldung.date);
+                    if (meldeDate < grenze) {
+                        titelzeilen[letzteTitelzeilenNummer].setAttribute("style", "background-color: gainsboro");
+                    } else {
+                        titelzeilen[letzteTitelzeilenNummer].setAttribute("style", "background-color: white");
+                    }
+                }
+            };
+
+            let alleTagsDerMeldung = meldung.tags.map(x => x.tag);
+
+            // prüfen, ob ein Tag der Meldung auf der Blacklist ist
+            for (let item of meldung.tags) {
+                if (blacklist.includes(item.tag)) {
+                    inBlacklist = true;
+                }
+            }
+
+            if (!inBlacklist) meldungNichtAufBlacklist();
+        }
+
+        function bisherigeSchlagzeilenLoeschen() {
+            const schlag = document.getElementById("Schlagzeilen");
+            while (schlag.firstChild) {
+                schlag.removeChild(schlag.firstChild);
+            }
+        }
+
+
+        function ressortButtonsErzeugen(uebergaberressort) {
+
+            let knopfPosition = document.getElementsByClassName("waehlbareRessorts");
+
+            for (let ressort of ressorts) {
+                let ressortButton = document.createElement("button");
+                ressortButton.textContent = ressort;
+                ressortButton.className = "resobutt";
+                if (ressort == uebergaberressort) {
+                    ressortButton.style.fontSize = "x-large"
+                }
+                knopfPosition[0].appendChild(ressortButton)
+                ressortButton.addEventListener("click", () => {
+
+                    let ressortDatum = JSON.parse(localStorage.getItem("datenNachrichtenFeed")).Ressortaufrufe;
+                    letzterAufrufDesRessorts = ressortDatum[ressortButton.textContent];
+                    // Aktualisierung des Aufrufdatums des aktuellen Ressorts
+                    ressortDatum[ressortButton.textContent] = Date();
+                    inLocalStorageAblegen("Ressortaufrufe", ressortDatum);
+
+                    gewaehltesRessort = ressortButton.textContent // gewaehltesRessort brauche ich global
+
+                    // Für alle Buttons Buttongröße Reset
+                    let schnulli = document.getElementsByClassName("waehlbareRessorts");
+                    for (let i of schnulli[0].children) {
+                        i.style.fontSize = "small"
+                        // i.style.borderRadius = "2px"
+                    }
+
+                    // gewählten Button vergrößern
+                    ressortButton.style.fontSize = "x-large";
+                    // ressortButton.style.borderRadius = "10px"
+
+                    // startRessort[0].textContent = gewaehltesRessort;
+                    bisherigeSchlagzeilenLoeschen();
+                    urlLesen(ressortButton.textContent);
+                })
+            }
+        }
+
+
+        function machButtonAusTag(tagArray, buttonAusgabeort, dialogID, tagAuswahl, tagtyp) {
+            // Tags der Meldung als Buttons ausgeben
+
+            for (let einzelnerTag of tagArray) {
+                let tagButton = document.createElement("button");
+                tagButton.textContent = einzelnerTag;
+                tagButton.className = tagtyp
+                buttonAusgabeort.appendChild(tagButton);
+
+                // Rechtsklick auf BlacklistButton verarbeiten
+                // anhand tagDialog unterscheidbar
+                tagButton.oncontextmenu = function (event) {
+                    event.preventDefault();
+                    tagAuswahl.textContent = tagButton.textContent;
+                    dialogID.showModal();
+                }
+            }
+        }
+
+
+        function inLocalStorageAblegen(datenname, daten) {
+            // Bisherigen Inhalt einlesen
+            let inhaltVonLocalStorage = JSON.parse(localStorage.getItem("datenNachrichtenFeed"));
+            // Neue Daten anhängen
+            inhaltVonLocalStorage[datenname] = daten;
+
+            localStorage.setItem("datenNachrichtenFeed", JSON.stringify(inhaltVonLocalStorage));
+        }
+
+
+
+        // #####################################
+        // Programmsteuerung
+        // #####################################
+        // let gewaehltesRessort;
+
+        let gewaehltesRessort = "Sport"
+        let letzterAufrufDesRessorts;
+        let ressorts = ["Inland", "Ausland", "Wirtschaft", "Sport", "Wissen", "Investigativ"];
+        const letzteAufrufe = JSON.parse(localStorage.getItem("datenNachrichtenFeed")).Ressortaufrufe;
+        try {
+            Object.keys(letzteAufrufe).length > 0;
+            weiterImNormalenModus();
+        }
+        catch {
+            // Es sind keine Daten da. Oder Du bist im privaten Modus");
+            weiterImPrivatenModus();
+        }
+
+        // Blacklist aus localStorage lesen
+        let blacklist = JSON.parse(localStorage.getItem("datenNachrichtenFeed")).Blacklist;
+
+        // Wofür sind diese beiden Zeilen? Braucht's die noch?
+        // let ausgeblendeteTagsString;
+        // machAusgeblendeteTagsString("Sport");
+
+        // let startRessort = document.getElementsByClassName("angezeigtesRessort");
+        // startRessort[0].textContent = "Sport";
+        // startRessort[0].textContent = defaultressort;
+        let blacklistAusgabeort = document.getElementsByClassName("ausgeblendeteTags");
+
+        machButtonAusTag(blacklist, blacklistAusgabeort[0], blacklistTagDialog, gewaehlterBlacklistTag, "blackTag");
+
+
+
+        function weiterImNormalenModus() {
+            // letzterAufrufDesRessorts = letzteAufrufe["Sport"]
+            letzterAufrufDesRessorts = letzteAufrufe[gewaehltesRessort]
+        }
+
+        function weiterImPrivatenModus() {
+            // Wenn noch keineDaten auf localStorage stehen, weil das Programm zum ersten Mal gestartet wird,
+            // oder weil Safari im privaten Modus nicht aus localStorage lesen kann,
+            // werden hier für jedes Ressort Startdaten erstellt
+            const startdatum = new Date("1970-01-01");
+            let ressortDatum = {};
+            for (ressort of ressorts) {
+                ressortDatum[ressort] = startdatum;
+                inLocalStorageAblegen("Ressortaufrufe", ressortDatum);
+            }
+            letzterAufrufDesRessorts = startdatum;
+        }
+
+        urlLesen();
+        ressortButtonsErzeugen(gewaehltesRessort);
+
     </script>
-  </body>
+</body>
+
 </html>
