@@ -279,7 +279,8 @@
 
                 // Rechtsklick auf BlacklistButton verarbeiten
                 // anhand tagDialog unterscheidbar
-                tagButton.oncontextmenu = function (event) {
+                // tagButton.oncontextmenu = function (event) {
+                tagButton.onclick = function (event) {
                     event.preventDefault();
                     tagAuswahl.textContent = tagButton.textContent;
                     dialogID.showModal();
