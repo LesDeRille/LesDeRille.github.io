@@ -307,7 +307,16 @@
         let gewaehltesRessort = "Sport"
         let letzterAufrufDesRessorts;
         let ressorts = ["Inland", "Ausland", "Wirtschaft", "Sport", "Wissen", "Investigativ"];
-        const letzteAufrufe = JSON.parse(localStorage.getItem("datenNachrichtenFeed")).Ressortaufrufe;
+        let letzteAufrufe;
+        try {
+            letzteAufrufe = JSON.parse(localStorage.getItem("datenNachrichtenFeed")).Ressortaufrufe;
+        }
+        catch {
+            // leeren localStorage .Ressortaufrufe anlegen
+            // alert("da stimmt was nicht");
+            weiterImPrivatenModus();
+        }
+
         try {
             Object.keys(letzteAufrufe).length > 0;
             weiterImNormalenModus();
@@ -318,7 +327,18 @@
         }
 
         // Blacklist aus localStorage lesen
-        let blacklist = JSON.parse(localStorage.getItem("datenNachrichtenFeed")).Blacklist;
+        let blacklist;
+        try {
+            blacklist = JSON.parse(localStorage.getItem("datenNachrichtenFeed")).Blacklist;
+        }
+        catch {
+            alert("da stimmt was nicht mit der Blacklist");
+            inLocalStorageAblegen("Blacklist", [])
+        }
+
+        // if (blacklist == null) {
+        //     blacklist = [];
+        // }
 
         // Wofür sind diese beiden Zeilen? Braucht's die noch?
         // let ausgeblendeteTagsString;
@@ -342,9 +362,11 @@
             // Wenn noch keineDaten auf localStorage stehen, weil das Programm zum ersten Mal gestartet wird,
             // oder weil Safari im privaten Modus nicht aus localStorage lesen kann,
             // werden hier für jedes Ressort Startdaten erstellt
+            let dummyDaten = { "Ressortaufrufe": [1, 2, 3], "Blacklist": [] }
+            localStorage.setItem("datenNachrichtenFeed", JSON.stringify(dummyDaten))
             const startdatum = new Date("1970-01-01");
             let ressortDatum = {};
-            for (ressort of ressorts) {
+            for (let ressort of ressorts) {
                 ressortDatum[ressort] = startdatum;
                 inLocalStorageAblegen("Ressortaufrufe", ressortDatum);
             }
