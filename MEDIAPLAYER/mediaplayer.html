@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>mediaplayer</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+</head>
+
+<body>
+  <p>mediaplayer</p>
+  <label for="musik">Wähle ein Verzeichnis aus:</label>
+  <!-- <input type="file" id="musik" name="avatar" accept="audio/mp3" /> -->
+  <!-- <input type="file" id="musik" name="avatar" webkitdirectory multiple /> -->
+  <input type="file" id="musik" webkitdirectory multiple />
+
+  <div id="tagAuswahl">
+  </div>
+  <figure>
+    <figcaption id="laufenderTitel">Beatles: Love me do</figcaption>
+    <div id="spieler">
+    </div>
+    <!-- https://developer.mozilla.org/de/docs/Web/HTML/Reference/Elements/audio -->
+  </figure>
+
+  <div id="buttons">
+    <button id="blacklist">Aktuellen Titel zur Blacklist hinzufügen</button>
+    <hr>
+    <p>Local Storage aus- und einlesen</p>
+    <label>Sicherungsdatei einlesen</label>
+    <input type="file" onchange="readFile(this)" accept=".json">
+    <p></p>
+    <input type="submit" value="Alles als json sichern" id="jsonKomplett">
+
+  </div>
+
+
+
+  <!-- <script src="./liederliste.js"></script> -->
+  <script src="./scripts/makePlaylist.js"></script>
+  <script src="./scripts/makeTagCheckboxes.js"></script>
+  <script src="./scripts/playThePlaylist.js"></script>
+  <script src="./scripts/makeBlacklist.js"></script>
+  <script src="./scripts/handlingBlacklist.js"></script>
+
+  <script>
+    'use strict';
+
+    // ###########################
+    // ### Globale Variable #######
+    // ###########################
+
+    // let tags = ["Frühstück", "Rockig", "Simis Musik", "Blacklist und Co ignorieren"];
+    let tags = ["Blacklist und Co ignorieren"];
+    let meinePlaylist = [];
+
+    let liste = document.getElementById("musik");
+
+    liste.addEventListener("change", (event) => {
+      let alle = event.target.files
+      // selectNextSong(alle);
+      machPlaylist(alle, checkboxAuswahl);
+      // playTheSong(alle[0])
+    });
+
+
+    for (let tag of tags) {
+      checkboxErzeugen(tag);
+    }
+    erzeugeDieEventlistener(); // für die Checkboxen
+    let checkboxAuswahl = [];
+    
+
+
+    const aktuellerAbschnitt = document.getElementById("spieler")
+    const aktuellerTitelname = document.getElementById("laufenderTitel");
+    let neuesAudio = document.createElement("audio");
+    neuesAudio.setAttribute("autoplay", "true");
+    neuesAudio.setAttribute("controls", "true");
+
+    // Fuer das Handling von localStorage
+    let globaleVariableFuerTitelpfadAufDieBlacklist;
+    let blacklistArray = [];
+    let datenMediaplayer;
+    let datenMediaplayerWiederhergestellt;
+
+    let bereitsGespielteTitel = [];
+
+    // ########################################
+    // ### Inhalt localStorage anzeigen #######
+    // ########################################
+
+    // Hat keine Funktion, ist nur zum Sehen, was da ist
+    // console.log(localStorage)
+
+    // ###########################
+    // ### Programmsteuerung #######
+    // ###########################
+    // Los geht's mit irgendeinem Lied im Array
+    // console.log(erzeugePlaylistAufTagbasis("Frühstück"));
+
+    // playNextSong(defineNumberOfNextSong());
+
+    // ###########################
+    // ### Functions #######
+    // ###########################
+
+
+
+
+    // ###########################
+    // ### Event-Listener #######
+    // ###########################
+    // neuesAudio.addEventListener("ended", (event) => {
+    //   if (lieder.length > 0) {
+    //     let liedNummer = defineNumberOfNextSong();
+    //     playNextSong(liedNummer);
+    //   } else {
+    //     alert("Alle Titel gespielt")
+    //   }
+    // });
+
+    // gespielte Titel speichern, wenn das Fenster geschlossen wird
+    // scheint auch beim Reload zu greifen
+    window.onbeforeunload = () => {
+      let speicherObject = {
+        "gespielteTitel": Array.from(new Set(bereitsGespielteTitel)),
+        "blacklist": blacklistArray
+      };
+      // Nur Rausschreiben, wenn weder 'bereitsGespielteTitel' noch 'blacklistArray' leer sind
+      // Ist nicht hasenrein, aber mal ein Anfang
+      if (bereitsGespielteTitel.length > 0 && blacklistArray.length > 0) {
+        localStorage.setItem("datenMediaplayer", JSON.stringify(speicherObject));
+      }
+    }
+
+
+
+  </script>
+</body>
+
+</html>
