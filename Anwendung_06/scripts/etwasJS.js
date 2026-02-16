@@ -1,0 +1,1 @@
+alert("Ich stehe im Verzeichnis scripts")
