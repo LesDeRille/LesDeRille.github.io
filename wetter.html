@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Wetter</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+</head>
+
+<body>
+
+    <script>
+        "use strict";
+        console.log("Da bin ich")
+        async function urlLesen(ressort = "Sport") {
+            let url = 'https://www.tagesschau.de/api2u/news/?ressort=' + ressort;
+            let wetterUrl = 'https://dwd.api.proxy.bund.dev/v30/stationOverviewExtended?stationIds=10865'
+            // let response = await fetch(url);
+            let response = await fetch(wetterUrl);
+            let commits = await response.json(); // read response body and parse as JSON
+            console.log(commits)
+        }
+        urlLesen();
+
+    </script>
+</body>
+
+</html>
