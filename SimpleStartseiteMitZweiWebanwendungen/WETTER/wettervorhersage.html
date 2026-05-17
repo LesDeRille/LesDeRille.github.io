@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Wetter</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+</head>
+
+<style>
+    table {
+        border-collapse: collapse;
+        overflow: auto;
+        display: block;
+
+    }
+
+    td,
+    th {
+        border: 1px solid rgb(160 160 160);
+        text-align: center;
+        background-color: rgb(193, 227, 240);
+    }
+
+    th {
+        border: 1px solid rgb(160 160 160);
+        text-align: center;
+        position: sticky;
+        left: 0;
+    }
+
+    .ueberschrift {
+        padding-top: 10px;
+        position: sticky;
+        left: 0;
+    }
+</style>
+
+<body>
+
+    <h1>Open Meteo Wetter Balingen</h1>
+    <!-- <script src="/Users/franke/Downloads/wettervorhersage_Bronnhaupten.js"></script> -->
+    <script src="./machHeuteUndMorgenVorhersage.js"></script>
+    <script src="./MachWettertabelleV2.js"></script>
+    <script src="./mach10TageVorhersage.js"></script>
+    <script src="./wetterDownload.js"></script>
+    <script src="./wettericons.js"></script>
+
+    <script>
+        "use strict";
+
+        let openMeteoJson = openMeteoLesen();
+        // wetterdatenAusgeben(wetterJson);
+
+        function wetterdatenAusgeben(alleWetterdaten) {
+            console.log(alleWetterdaten)
+            let wetterdict = {}
+
+            for (let day of alleWetterdaten.Q740.days) {
+                let datum = new Date(day.dayDate).toString()
+                let meinDatum = day.dayDate + " " + datum.split(" ")[0];
+                meinDatum = new Date(day.dayDate);
+                meinDatum.setHours(0, 0);
+                meinDatum = meinDatum.getTime();
+                wetterdict[meinDatum] = {
+                    "minTemperatur": day.temperatureMin / 10,
+                    "maxTemperatur": day.temperatureMax / 10,
+                    "sonne": parseInt(day.sunshine / 10 / 60),
+                    "Regen": day.precipitation,
+                    "Wind": day.windSpeed,
+                    "Icon": day.icon
+                }
+            }
+            console.table(wetterdict);
+            let datenbeginn = alleWetterdaten.Q740.forecast1.start;
+            let zeitschritt = alleWetterdaten.Q740.forecast1.timeStep;
+
+            let datum = new Date(datenbeginn);
+
+            let temperaturArray = alleWetterdaten.Q740.forecast1.temperature
+            let counter = 0;
+            let counter2 = 0;
+            // let text = datum.toString().split(" ")[0];
+            let dummyDatum = datum.getTime();
+            let windausgabe = wetterdict[dummyDatum].Wind
+            let stundenausgabe = { "Temp": {}, "Regen": {}, "Sonne": {}, "IstTag": {}, "Wind": {}, "Icon": {} }
+            let jetzt = new Date().getHours()
+            let sonnencounter = -1;
+            let ausgabe = datenbeginn;
+            for (let temp of temperaturArray) {
+                if (counter2 < 48) {
+                    if (counter < 24) {
+                        if (counter2 >= jetzt) {
+                            sonnencounter++
+                            stundenausgabe.Temp[ausgabe] = temp / 10
+                            let regen = alleWetterdaten.Q740.forecast1.precipitationTotal[counter2];
+                            let sonne = alleWetterdaten.Q740.forecast1.sunshine[sonnencounter];
+                            let hellDunkel = alleWetterdaten.Q740.forecast1.isDay[counter2];
+                            let wettericon = alleWetterdaten.Q740.forecast1.icon[counter2];
+                            stundenausgabe.Regen[ausgabe] = regen;
+                            stundenausgabe.Sonne[ausgabe] = sonne;
+                            stundenausgabe.IstTag[ausgabe] = hellDunkel;
+                            stundenausgabe.Wind[ausgabe] = windausgabe;
+                            stundenausgabe.Icon[ausgabe] = wettericon;
+                        }
+                        counter++;
+                        counter2++;
+                        ausgabe += zeitschritt;
+                    }
+                    else {
+                        dummyDatum = datum.getTime();
+                        windausgabe = wetterdict[dummyDatum].Wind;
+
+                        counter = 0;
+                    }
+
+                }
+            }
+            console.table(stundenausgabe);
+
+            // machHeuteUndMorgenVorhersage(stundenausgabe);
+            // mach10TageVorhersage(wetterdict);
+            // console.log(stundenausgabe)
+        }
+
+
+
+        // Ab hier kommt der neue Part für Open-Meteo
+        
+
+
+        function wetterVerarbeiten(json) {
+            // console.log(json)
+
+            // Stundendaten
+            let omStundenausgabe = { "Temp": {}, "Regen": {}, "Sonne": {}, "IstTag": {}, "Wind": {}, "Windrichtung": {}, "Icon": {} }
+            let stundendatenDictAusJson = liesStundendaten(json);
+            erzeugeStundendict(stundendatenDictAusJson)
+            machHeuteUndMorgenVorhersage(omStundenausgabe);
+
+            // 10-Tagesdaten
+            let omZehnTagesausgabe = {}
+            let zehnTagesdatenDictAusJson = liesZehnTagesdaten(json);
+            erzeugeZehnTagesDict(zehnTagesdatenDictAusJson);
+
+
+            function liesStundendaten(json) {
+                let alleUhrzeiten = json.hourly.time;
+                let alleWettercodes = json.hourly.weather_code;
+                let alleTemperaturen2m = json.hourly.temperature_2m;
+                let alleWind_speed_10m = json.hourly.wind_speed_10m;
+                let alleWind_direction_10m = json.hourly.wind_direction_10m;
+                let allePrecipitation = json.hourly.precipitation;
+                let alleIs_day = json.hourly.is_day;
+                let alleCloud_cover = json.hourly.cloud_cover;
+                let alleSunshine_duration = json.hourly.sunshine_duration;
+                let rueckgabe = {
+                    "alleUhrzeiten": alleUhrzeiten,
+                    "alleWettercodes": alleWettercodes,
+                    "alleTemperaturen2m": alleTemperaturen2m,
+                    "alleWind_speed_10m": alleWind_speed_10m,
+                    alleWind_direction_10m,
+                    "allePrecipitation": allePrecipitation,
+                    "alleIs_day": alleIs_day,
+                    "alleCloud_cover": alleCloud_cover,
+                    alleSunshine_duration
+                }
+                return rueckgabe
+            }
+
+            function erzeugeStundendict(dictAusJson) {
+                for (let uhrzeit of dictAusJson.alleUhrzeiten) {
+                    let zaehler = dictAusJson.alleUhrzeiten.indexOf(uhrzeit);
+                    let omDatum = Date.parse(uhrzeit)
+                    omStundenausgabe.Icon[omDatum] = dictAusJson.alleWettercodes[zaehler];
+                    omStundenausgabe.IstTag[omDatum] = dictAusJson.alleIs_day[zaehler];
+                    omStundenausgabe.Regen[omDatum] = dictAusJson.allePrecipitation[zaehler];
+                    omStundenausgabe.Sonne[omDatum] = dictAusJson.alleCloud_cover[zaehler];
+                    omStundenausgabe.Temp[omDatum] = dictAusJson.alleTemperaturen2m[zaehler];
+                    omStundenausgabe.Wind[omDatum] = dictAusJson.alleWind_speed_10m[zaehler];
+                    omStundenausgabe.Windrichtung[omDatum] = dictAusJson.alleWind_direction_10m[zaehler];
+                }
+            }
+
+
+            // 10-Tagedaten
+
+            function liesZehnTagesdaten(json) {
+                let alleTage = json.daily.time;
+                let alleMinTemperaturen = json.daily.temperature_2m_min;
+                let alleMaxTemperaturen = json.daily.temperature_2m_max;
+                let alleRegen = json.daily.precipitation_sum;
+                let alleWindgeschwindigkeiten = json.daily.wind_speed_10m_max;
+                let alleWettercodes = json.daily.weather_code;
+
+                let rueckgabe = {
+                    alleTage,
+                    alleMinTemperaturen,
+                    alleMaxTemperaturen,
+                    alleRegen,
+                    alleWindgeschwindigkeiten,
+                    alleWettercodes,
+                }
+                return rueckgabe;
+            }
+
+            function erzeugeZehnTagesDict(zehnTagesdatenDictAusJson) {
+
+                for (let tag of zehnTagesdatenDictAusJson.alleTage) {
+                    let meinDatum = Date.parse(tag)
+                    let eintragNr = zehnTagesdatenDictAusJson.alleTage.indexOf(tag)
+
+                    omZehnTagesausgabe[meinDatum] = {
+                        "minTemperatur": zehnTagesdatenDictAusJson.alleMinTemperaturen[eintragNr],
+                        "maxTemperatur": zehnTagesdatenDictAusJson.alleMaxTemperaturen[eintragNr],
+                        "Regen": zehnTagesdatenDictAusJson.alleRegen[eintragNr],
+                        "Wind": zehnTagesdatenDictAusJson.alleWindgeschwindigkeiten[eintragNr],
+                        "Icon": zehnTagesdatenDictAusJson.alleWettercodes[eintragNr]
+                    }
+                }
+
+                mach10TageVorhersage(omZehnTagesausgabe);
+            }
+        }
+
+    </script>
+</body>
+
+</html>
